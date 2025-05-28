@@ -1,5 +1,7 @@
 # CutMyRoots
 
+![CutMyRoots Banner](https://i.imgur.com/TiJB3ha.png)
+
 A Python tool for automatic IP rotation using Tor network.
 
 ## Description
