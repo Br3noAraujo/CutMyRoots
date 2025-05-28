@@ -8,10 +8,7 @@ import time
 import subprocess
 import requests
 import json
-import sys
 from datetime import datetime
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 #color_list
 RED = '\033[31m'
@@ -19,22 +16,6 @@ GREEN = '\033[32m'
 BLUE = '\033[34m'
 YELLOW = '\033[33m'
 RESET = '\033[0m'
-
-def check_dependencies():
-    """Check if all required dependencies are installed"""
-    try:
-        import pysocks
-        import requests
-        return True
-    except ImportError as e:
-        print(f"{RED}Error: {e}{RESET}")
-        print(f"{YELLOW}Installing required dependencies...{RESET}")
-        try:
-            subprocess.run([sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'], check=True)
-            return True
-        except subprocess.CalledProcessError:
-            print(f"{RED}Failed to install dependencies. Please install manually.{RESET}")
-            return False
 
 def banner():
     print(f"""{GREEN}
@@ -70,7 +51,6 @@ def install_tor():
 
 def get_public_ip_through_tor():
     try:
-        # Use torify to ensure the request goes through Tor
         result = subprocess.run(['torify', 'curl', '-s', 'https://api.ipify.org?format=json'], 
                               capture_output=True, text=True)
         if result.returncode == 0:
@@ -84,21 +64,13 @@ def get_public_ip_through_tor():
 def force_new_tor_identity():
     """Force Tor to create a new identity more aggressively"""
     try:
-        # Stop Tor service
         subprocess.run(['sudo', 'service', 'tor', 'stop'], check=True)
         time.sleep(2)
-        
-        # Clear Tor cache
         subprocess.run(['sudo', 'rm', '-rf', '/var/lib/tor/data/*'], check=True)
-        
-        # Start Tor service
         subprocess.run(['sudo', 'service', 'tor', 'start'], check=True)
         time.sleep(5)
-        
-        # Force new identity
         subprocess.run(['sudo', 'killall', '-HUP', 'tor'], check=True)
         time.sleep(2)
-        
         return True
     except subprocess.CalledProcessError as e:
         print(f"{RED}Error forcing new identity: {e}{RESET}")
@@ -142,9 +114,6 @@ def show_menu():
     return input(f"{YELLOW}Choose an option: {RESET}")
 
 def main():
-    if not check_dependencies():
-        return
-
     if not check_tor():
         install_tor()
     
@@ -161,12 +130,10 @@ def main():
                 try:
                     print(f"{BLUE}Restarting Tor...{RESET}")
                     
-                    # Force new Tor identity
                     if not force_new_tor_identity():
                         print(f"{RED}Error forcing new Tor identity.{RESET}")
                         continue
                     
-                    # Check if Tor is working
                     if not check_tor_connection():
                         print(f"{RED}Error: Tor is not working correctly.{RESET}")
                         continue
